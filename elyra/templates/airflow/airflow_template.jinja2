@@ -66,6 +66,7 @@ op_{{ operation.id|regex_replace }} = KubernetesPodOperator(name='{{ operation.n
                                                             annotations={{ processor.render_annotations(operation.elyra_props) }},
                                                             labels={{ processor.render_labels(operation.elyra_props) }},
                                                             tolerations=[{{ processor.render_tolerations(operation.elyra_props) }}],
+                                                            node_selectors=[{{ processor.render_node_selector(operation.elyra_props) }}],
                                                             in_cluster={{ in_cluster }},
                                                             config_file="{{ kube_config_path }}",
 {% endif %}

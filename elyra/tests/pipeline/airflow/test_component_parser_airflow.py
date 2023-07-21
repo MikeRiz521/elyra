@@ -443,8 +443,8 @@ def test_parse_airflow_component_file_no_inputs():
 
     # Properties JSON should only include the five parameters common to every
     # component: ('mounted_volumes', 'kubernetes_pod_annotations', 'kubernetes_pod_labels',
-    # 'kubernetes_shared_mem_size', and 'kubernetes_tolerations')
-    num_common_params = 5
+    # 'kubernetes_shared_mem_size', 'kubernetes_tolerations' and 'kubernetes_node_selector')
+    num_common_params = 6
     properties_from_json = [
         prop
         for prop in properties_json["properties"]["component_parameters"]["properties"].keys()

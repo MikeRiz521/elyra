@@ -72,6 +72,7 @@ from elyra.pipeline.properties import ElyraProperty
 from elyra.pipeline.properties import ElyraPropertyList
 from elyra.pipeline.properties import KubernetesAnnotation
 from elyra.pipeline.properties import KubernetesLabel
+from elyra.pipeline.properties import KubernetesNodeSelector
 from elyra.pipeline.properties import KubernetesSecret
 from elyra.pipeline.properties import KubernetesToleration
 from elyra.pipeline.properties import PipelineParameter
@@ -1245,6 +1246,16 @@ class KfpPipelineProcessor(RuntimePipelineProcessor):
             "effect": instance.effect,
         }
 
+    def add_node_selector(self, instance: KubernetesNodeSelector, execution_object: Any, **kwargs) -> None:
+        """Add KubernetesToleration instance to the execution object"""
+        if "kubernetes_node_selector" not in execution_object:
+            execution_object["kubernetes_node_selector"] = {}
+        selector_hash = hashlib.sha256(f"{instance.key}:{instance.value}".encode()).hexdigest()
+        execution_object["kubernetes_node_selector"][selector_hash] = {
+            "label_name": instance.key,
+            "value": instance.value,
+        }
+
     @property
     def supported_properties(self) -> Set[str]:
         """A list of Elyra-owned properties supported by this runtime processor."""
@@ -1252,6 +1263,7 @@ class KfpPipelineProcessor(RuntimePipelineProcessor):
             pipeline_constants.ENV_VARIABLES,
             pipeline_constants.KUBERNETES_SECRETS,
             pipeline_constants.MOUNTED_VOLUMES,
+            pipeline_constants.KUBERNETES_NODE_SELECTOR,
             pipeline_constants.KUBERNETES_POD_ANNOTATIONS,
             pipeline_constants.KUBERNETES_POD_LABELS,
             pipeline_constants.KUBERNETES_TOLERATIONS,

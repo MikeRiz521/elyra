@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 
 from elyra.pipeline.pipeline_constants import DISABLE_NODE_CACHING
 from elyra.pipeline.pipeline_constants import ENV_VARIABLES
+from elyra.pipeline.pipeline_constants import KUBERNETES_NODE_SELECTOR
 from elyra.pipeline.pipeline_constants import KUBERNETES_POD_ANNOTATIONS
 from elyra.pipeline.pipeline_constants import KUBERNETES_POD_LABELS
 from elyra.pipeline.pipeline_constants import KUBERNETES_SECRETS
@@ -955,6 +956,56 @@ class KubernetesToleration(ElyraPropertyListItem):
     def add_to_execution_object(self, runtime_processor: RuntimePipelineProcessor, execution_object: Any, **kwargs):
         """Add KubernetesToleration instance to the execution object for the given runtime processor"""
         runtime_processor.add_kubernetes_toleration(instance=self, execution_object=execution_object, **kwargs)
+
+
+class KubernetesNodeSelector(ElyraPropertyListItem):
+    """An ElyraProperty representing a single Kubernetes node selector term"""
+
+    applies_to_generic = True
+    applies_to_custom = True
+
+    property_id = KUBERNETES_NODE_SELECTOR
+    property_display_name = "Kubernetes Node Selector"
+    property_description = "Kubernetes node selector terms to apply to the pod where the node is executed."
+    property_attributes = [
+        ListItemPropertyAttribute(
+            attribute_id="key",
+            display_name="Key",
+            allowed_input_types=[PropertyInputType(base_type="str", placeholder="key")],
+            hidden=False,
+            required=True,
+            use_in_key=True,
+        ),
+        ListItemPropertyAttribute(
+            attribute_id="value",
+            display_name="Value",
+            allowed_input_types=[PropertyInputType(base_type="str", placeholder="value")],
+            hidden=False,
+            required=True,
+            use_in_key=True,
+        ),
+    ]
+
+    def __init__(self, key, value, **kwargs):
+        self.key = key
+        self.value = value
+
+    def get_all_validation_errors(self) -> List[str]:
+        """
+        Perform custom validation on an instance using the constraints documented in
+        https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+        """
+
+        validation_errors = []
+
+        # Ensure the operator is valid
+        if self.key is None:
+            validation_errors.append(f"'{self.key}' is not a valid label: the label cannot be empty.")
+        return validation_errors
+
+    def add_to_execution_object(self, runtime_processor: RuntimePipelineProcessor, execution_object: Any, **kwargs):
+        """Add KubernetesToleration instance to the execution object for the given runtime processor"""
+        runtime_processor.add_node_selector(instance=self, execution_object=execution_object, **kwargs)
 
 
 class ElyraPropertyList(list):

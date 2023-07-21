@@ -25,6 +25,7 @@ import pytest
 from elyra.pipeline.kfp.kfp_properties import KfpPipelineParameter
 from elyra.pipeline.pipeline import PIPELINE_CURRENT_VERSION
 from elyra.pipeline.pipeline_constants import ENV_VARIABLES
+from elyra.pipeline.pipeline_constants import KUBERNETES_NODE_SELECTOR
 from elyra.pipeline.pipeline_constants import KUBERNETES_POD_ANNOTATIONS
 from elyra.pipeline.pipeline_constants import KUBERNETES_SECRETS
 from elyra.pipeline.pipeline_constants import KUBERNETES_SHARED_MEM_SIZE
@@ -37,6 +38,7 @@ from elyra.pipeline.properties import CustomSharedMemorySize
 from elyra.pipeline.properties import ElyraPropertyList
 from elyra.pipeline.properties import EnvironmentVariable
 from elyra.pipeline.properties import KubernetesAnnotation
+from elyra.pipeline.properties import KubernetesNodeSelector
 from elyra.pipeline.properties import KubernetesSecret
 from elyra.pipeline.properties import KubernetesToleration
 from elyra.pipeline.properties import VolumeMount
@@ -633,6 +635,28 @@ def test_valid_node_property_kubernetes_toleration(validation_manager):
     assert len(issues) == 0, response.to_json()
 
 
+def test_valid_node_property_kubernetes_node_selector(validation_manager):
+    """
+    Validate that valid kubernetes node selector terms definitions are not flagged as invalid.
+    """
+    response = ValidationResponse()
+    node_dict = {"id": "test-id", "app_data": {"label": "test", "ui_data": {}, "component_parameters": {}}}
+    node_selector_terms = ElyraPropertyList(
+        [
+            KubernetesNodeSelector(key="key0", value=""),
+            KubernetesNodeSelector(key="key1", value="value1"),
+        ]
+    )
+    node_dict["app_data"]["component_parameters"][KUBERNETES_NODE_SELECTOR] = node_selector_terms
+
+    node = Node(node_dict)
+    validation_manager._validate_elyra_owned_property(
+        node_id=node.id, node_label=node.label, node=node, property_name=KUBERNETES_NODE_SELECTOR, response=response
+    )
+    issues = response.to_json().get("issues")
+    assert len(issues) == 0, response.to_json()
+
+
 def test_valid_node_property_kubernetes_pod_annotation(validation_manager):
     """
     Validate that valid kubernetes pod annotation definitions are not flagged as invalid.
@@ -719,6 +743,40 @@ def test_invalid_node_property_kubernetes_toleration(validation_manager):
     for issue in issues:
         assert issue["type"] == "invalidKubernetesToleration"
         assert issue["data"]["propertyName"] == KUBERNETES_TOLERATIONS
+        assert issue["data"]["nodeID"] == "test-id"
+        assert issue["message"] == expected_error_messages[index], f"Index is {index}"
+        index = index + 1
+
+
+def test_invalid_node_property_kubernetes_node_selector(validation_manager):
+    """
+    Validate that invalid kubernetes node selector terms definitions are properly detected.
+    """
+    response = ValidationResponse()
+    node_dict = {"id": "test-id", "app_data": {"label": "test", "ui_data": {}, "component_parameters": {}}}
+    invalid_node_selector_terms = ElyraPropertyList(
+        [
+            KubernetesNodeSelector(key="", value=""),  # cannot be all empty
+        ]
+    )
+    expected_error_messages = [
+        "'' is not a valid label: the label cannot be empty.",
+    ]
+
+    # verify that the number of node selector terms in this test matches the number of error messages
+    assert len(invalid_node_selector_terms) == len(expected_error_messages), "Test setup error. "
+    node_dict["app_data"]["component_parameters"][KUBERNETES_NODE_SELECTOR] = invalid_node_selector_terms
+
+    node = Node(node_dict)
+    validation_manager._validate_elyra_owned_property(
+        node_id=node.id, node_label=node.label, node=node, property_name=KUBERNETES_NODE_SELECTOR, response=response
+    )
+    issues = response.to_json().get("issues")
+    assert len(issues) == len(invalid_node_selector_terms), response.to_json()
+    index = 0
+    for issue in issues:
+        assert issue["type"] == "invalidKubernetesNodeSelector"
+        assert issue["data"]["propertyName"] == KUBERNETES_NODE_SELECTOR
         assert issue["data"]["nodeID"] == "test-id"
         assert issue["message"] == expected_error_messages[index], f"Index is {index}"
         index = index + 1

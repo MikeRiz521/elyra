@@ -248,5 +248,36 @@
       }
     },
     "default": []
+  },
+  "kubernetes_node_selector": {
+    "title": "Kubernetes Node Selector",
+    "description": "Kubernetes node selector terms to apply to the pod where the node is executed.",
+    "type": "array",
+    "items": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "title": "Key",
+          "default": ""
+        },
+        "value": {
+          "type": "string",
+          "title": "Value",
+          "default": ""
+        }
+      }
+    },
+    "uihints": {
+      "items": {
+        "key": {
+          "ui:placeholder": "key"
+        },
+        "value": {
+          "ui:placeholder": "value"
+        }
+      }
+    },
+    "default": []
   }
 }

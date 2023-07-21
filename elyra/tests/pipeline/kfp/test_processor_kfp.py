@@ -41,6 +41,7 @@ from elyra.pipeline.pipeline import GenericOperation
 from elyra.pipeline.pipeline import Operation
 from elyra.pipeline.pipeline import Pipeline
 from elyra.pipeline.pipeline_constants import COS_OBJECT_PREFIX
+from elyra.pipeline.pipeline_constants import KUBERNETES_NODE_SELECTOR
 from elyra.pipeline.pipeline_constants import KUBERNETES_POD_ANNOTATIONS
 from elyra.pipeline.pipeline_constants import KUBERNETES_POD_LABELS
 from elyra.pipeline.pipeline_constants import KUBERNETES_SECRETS
@@ -54,6 +55,7 @@ from elyra.pipeline.properties import DisableNodeCaching
 from elyra.pipeline.properties import ElyraPropertyList
 from elyra.pipeline.properties import KubernetesAnnotation
 from elyra.pipeline.properties import KubernetesLabel
+from elyra.pipeline.properties import KubernetesNodeSelector
 from elyra.pipeline.properties import KubernetesSecret
 from elyra.pipeline.properties import KubernetesToleration
 from elyra.pipeline.properties import VolumeMount
@@ -229,6 +231,7 @@ def test_compose_container_command_args_invalid_dependency_filename(processor: K
 #  - KfpPipelineProcessor._add_kubernetes_pod_annotation
 #  - KfpPipelineProcessor._add_kubernetes_pod_label
 #  - KfpPipelineProcessor._add_kubernetes_toleration
+#  - KfpPipelineProcessor._add_node_selector
 # ---------------------------------------------------
 
 
@@ -367,6 +370,25 @@ def test_add_kubernetes_toleration(processor: KfpPipelineProcessor):
         assert execution_object["kubernetes_tolerations"][toleration_hash]["operator"] == instance.operator
         assert execution_object["kubernetes_tolerations"][toleration_hash]["effect"] == instance.effect
     assert len(expected_unique_execution_object_entries) == len(execution_object["kubernetes_tolerations"].keys())
+
+
+def test_add_node_selector(processor: KfpPipelineProcessor):
+    """
+    Verify that add_kubernetes_node_selector updates the execution object as expected
+    """
+    execution_object = {}
+    expected_unique_execution_object_entries = []
+    for instance in [
+        KubernetesNodeSelector("node-label", "label"),
+        KubernetesNodeSelector("toleration-key", ""),
+    ]:
+        processor.add_node_selector(instance=instance, execution_object=execution_object)
+        selector_hash = hashlib.sha256(f"{instance.key}:{instance.value}".encode()).hexdigest()
+        if selector_hash not in expected_unique_execution_object_entries:
+            expected_unique_execution_object_entries.append(selector_hash)
+        assert execution_object["kubernetes_node_selector"][selector_hash]["key"] == instance.key
+        assert execution_object["kubernetes_node_selector"][selector_hash]["value"] == instance.value
+    assert len(expected_unique_execution_object_entries) == len(execution_object["kubernetes_node_selector"].keys())
 
 
 # ---------------------------------------------------
@@ -1147,6 +1169,7 @@ def test_generate_pipeline_dsl_compile_pipeline_dsl_optional_elyra_properties(
      - Kubernetes labels
      - Kubernetes annotations
      - Kubernetes tolerations
+     - Kubernetes node selector
     """
 
     # Obtain artifacts from metadata_dependencies fixture
@@ -1330,6 +1353,28 @@ def test_generate_pipeline_dsl_compile_pipeline_dsl_optional_elyra_properties(
                 f"{expected_toleration.key}::{expected_toleration.operator}::"
                 f"{expected_toleration.value}::{expected_toleration.effect}'"
                 f"in {node_template['tolerations']}"
+            )
+            assert entry_found, not_found_msg
+
+    #
+    # Validate Kubernetes node selector
+    #
+    # Validate custom Kubernetes node selector
+    expected_kubernetes_node_selector = op.elyra_props.get(KUBERNETES_NODE_SELECTOR)
+    if len(expected_kubernetes_node_selector) > 0:
+        # There must be one or more 'node selector' entries, e.g.
+        # {key: kt1, value: '3'}
+        assert node_template.get("nodeSelector") is not None, node_template
+        for expected_node_selector_term in expected_kubernetes_node_selector:
+            entry_found = False
+            for node_selector_entry in node_template["nodeSelector"]:
+                if node_selector_entry[expected_node_selector_term.key] == expected_node_selector_term.value:
+                    entry_found = True
+                    break
+            not_found_msg = (
+                "Missing node selector entry for '"
+                f"{expected_node_selector_term.key}:{expected_node_selector_term.value}'"
+                f"in {node_template['nodeSelector']}"
             )
             assert entry_found, not_found_msg
 

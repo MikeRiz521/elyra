@@ -143,6 +143,11 @@ def generated_pipeline(
         ))
 {%    endfor %}
 {%  endif %}
+{%  if workflow_task.task_modifiers.kubernetes_node_selector %}
+{%    for selector_dict in workflow_task.task_modifiers.kubernetes_node_selector.values() %}
+    {{ task_name }}.add_node_selector_constraint(label_name="{{ selector_dict.label_name }}", value="{{ selector_dict.value }}")
+{%    endfor %}
+{%  endif %}    
 {%  if workflow_task.task_modifiers.kubernetes_shared_mem_size %}
     {{ task_name }}.add_volume(V1Volume(
             name="shm",

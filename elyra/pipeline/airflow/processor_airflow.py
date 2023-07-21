@@ -52,6 +52,7 @@ from elyra.pipeline.properties import ElyraProperty
 from elyra.pipeline.properties import ElyraPropertyList
 from elyra.pipeline.properties import KubernetesAnnotation
 from elyra.pipeline.properties import KubernetesLabel
+from elyra.pipeline.properties import KubernetesNodeSelector
 from elyra.pipeline.properties import KubernetesToleration
 from elyra.pipeline.properties import VolumeMount
 from elyra.pipeline.runtime_type import RuntimeProcessorType
@@ -662,6 +663,19 @@ be fully qualified (i.e., prefixed with their package names).
                 {{"key": {key}, "operator": "{t.operator}", "value": {value}, "effect": {effect}}},"""
         return dedent(str_to_render)
 
+    def render_node_selector(self, elyra_properties: Dict[str, ElyraProperty]):
+        """
+        Render any Kubernetes node selector defined for an operation for use in the Airflow DAG template
+        :returns: a string literal containing the python code to be rendered in the DAG
+        """
+        str_to_render = ""
+        for t in elyra_properties.get(pipeline_constants.KUBERNETES_NODE_SELECTOR, []):
+            key = f'"{t.key}"'
+            value = f'"{t.value}"' if t.value is not None else t.value
+            str_to_render += f"""
+                {{{key}:{value}}},"""
+        return dedent(str_to_render)
+
     def render_elyra_owned_properties(self, elyra_properties: Dict[str, ElyraProperty]):
         """
         Build the KubernetesExecutor object for the given operation for use in the DAG.
@@ -719,6 +733,17 @@ be fully qualified (i.e., prefixed with their package names).
             }
         )
 
+    def add_node_selector(self, instance: KubernetesNodeSelector, execution_object: Any, **kwargs) -> None:
+        """Add KubernetesNodeSelector instance to the execution object for the given runtime processor"""
+        if "node_selectors" not in execution_object:
+            execution_object["node_selectors"] = []
+        execution_object["node_selectors"].append(
+            {
+                "label_name": instance.key,
+                "value": instance.value,
+            }
+        )
+
     def add_custom_shared_memory_size(self, instance: CustomSharedMemorySize, execution_object: Any, **kwargs) -> None:
         """Add CustomSharedMemorySize instance to the execution object for the given runtime processor"""
 
@@ -747,6 +772,7 @@ be fully qualified (i.e., prefixed with their package names).
             pipeline_constants.KUBERNETES_SECRETS,
             pipeline_constants.MOUNTED_VOLUMES,
             pipeline_constants.KUBERNETES_POD_ANNOTATIONS,
+            pipeline_constants.KUBERNETES_NODE_SELECTOR,
             pipeline_constants.KUBERNETES_POD_LABELS,
             pipeline_constants.KUBERNETES_TOLERATIONS,
             pipeline_constants.KUBERNETES_SHARED_MEM_SIZE,

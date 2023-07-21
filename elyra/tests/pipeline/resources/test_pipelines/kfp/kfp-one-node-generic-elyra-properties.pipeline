@@ -67,6 +67,16 @@
                   "value": "v3"
                 }
               ],
+              "kubernetes_node_selector": [
+                {
+                  "key": "kn1",
+                  "value": "3",
+                },
+                {
+                  "key": "kt2",
+                  "value": ""
+                }
+              ],
               "mounted_volumes": [
                 {
                   "path": "/test/vol1",
@@ -139,6 +149,7 @@
             "kubernetes_pod_annotations": [],
             "kubernetes_shared_mem_size": {},
             "kubernetes_tolerations": [],
+            "kubernetes_node_selector": [],
             "kubernetes_pod_labels": [],
             "mounted_volumes": [],
             "env_vars": [],

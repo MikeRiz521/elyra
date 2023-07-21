@@ -35,6 +35,7 @@ Object {
               "kubernetes_secrets": Array [],
               "kubernetes_shared_mem_size": Object {},
               "kubernetes_tolerations": Array [],
+              "kubernetes_node_selector": Array [],
               "mounted_volumes": Array [],
               "outputs": Array [],
             },

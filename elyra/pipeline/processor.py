@@ -46,6 +46,7 @@ from elyra.pipeline.properties import DisableNodeCaching
 from elyra.pipeline.properties import EnvironmentVariable
 from elyra.pipeline.properties import KubernetesAnnotation
 from elyra.pipeline.properties import KubernetesLabel
+from elyra.pipeline.properties import KubernetesNodeSelector
 from elyra.pipeline.properties import KubernetesSecret
 from elyra.pipeline.properties import KubernetesToleration
 from elyra.pipeline.properties import VolumeMount
@@ -585,5 +586,9 @@ class RuntimePipelineProcessor(PipelineProcessor):
         pass
 
     def add_kubernetes_toleration(self, instance: KubernetesToleration, execution_object: Any, **kwargs) -> None:
+        """Add KubernetesToleration instance to the execution object for the given runtime processor"""
+        pass
+
+    def add_node_selector(self, instance: KubernetesNodeSelector, execution_object: Any, **kwargs) -> None:
         """Add KubernetesToleration instance to the execution object for the given runtime processor"""
         pass

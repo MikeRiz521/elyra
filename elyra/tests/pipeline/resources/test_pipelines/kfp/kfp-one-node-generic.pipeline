@@ -24,6 +24,7 @@
               "kubernetes_secrets": [],
               "kubernetes_shared_mem_size": {},
               "kubernetes_tolerations": [],
+              "kubernetes_node_selector": [],
               "mounted_volumes": [],
               "filename": "a-notebook.ipynb"
             },
@@ -90,6 +91,7 @@
           "pipeline_defaults": {
             "kubernetes_shared_mem_size": {},
             "kubernetes_tolerations": [],
+            "kubernetes_node_selector": [],
             "kubernetes_pod_labels": [],
             "kubernetes_pod_annotations": [],
             "mounted_volumes": [],
